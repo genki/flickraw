@@ -10,6 +10,7 @@ require 'flickraw'
 # FlickRaw.shared_secret = # Shared secret
 # flickr.access_token = # Auth token
 # flickr.access_secret = # Auth token secret
+def flickr; $flickraw ||= FlickRaw::Flickr.new end
 
 class Upload < Test::Unit::TestCase
   def test_upload

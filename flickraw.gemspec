@@ -7,7 +7,7 @@ require 'flickraw'
 
 Gem::Specification.new do |s|
   s.summary = "Flickr library with a syntax close to the syntax described on http://www.flickr.com/services/api"
-  s.name = "flickraw"
+  s.name = "genki-flickraw"
   s.author = "Mael Clerambault"
   s.email =  "maelclerambault@yahoo.fr"
   s.homepage = "http://hanklords.github.com/flickraw/"

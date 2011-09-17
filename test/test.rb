@@ -8,6 +8,7 @@ require 'flickraw'
 
 # FlickRaw.shared_secret = # Shared secret
 # flickr.auth.checkToken :auth_token => # Auth token
+def flickr; $flickraw ||= FlickRaw::Flickr.new end
 
 class Basic < Test::Unit::TestCase
   def test_request
