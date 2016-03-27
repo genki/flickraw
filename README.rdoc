@@ -9,6 +9,8 @@ The github repository: http://github.com/hanklords/flickraw
 
 = Installation
 Type this in a console (you might need to be superuser)
+
+ gem install json (This is only necessary on ruby 1.8)
  gem install flickraw
 
 This will recreate the documentation by fetching the methods descriptions from flickr and then virtually plugging them in standard rdoc documentation.
@@ -17,11 +19,11 @@ This will recreate the documentation by fetching the methods descriptions from f
 
 = Features
 
-* Small single file: flickraw.rb is less than 400 lines
 * Minimal dependencies
 * Complete support of flickr API. This doesn't require an update of the library
 * Ruby syntax similar to the flickr api
 * Flickr authentication
+* HTTPS Support
 * Photo upload
 * Proxy support
 * Flickr URLs helpers
@@ -57,8 +59,8 @@ This will recreate the documentation by fetching the methods descriptions from f
   FlickRaw.api_key="... Your API key ..."
   FlickRaw.shared_secret="... Your shared secret ..."
 
-  token = flickr.get_request_token(:perms => 'delete')
-  auth_url = token['oauth_authorize_url']
+  token = flickr.get_request_token
+  auth_url = flickr.get_authorize_url(token['oauth_token'], :perms => 'delete')
 
   puts "Open this url in your process to complete the authication process : #{auth_url}"
   puts "Copy here the number given when you complete the process."
@@ -67,7 +69,7 @@ This will recreate the documentation by fetching the methods descriptions from f
   begin
     flickr.get_access_token(token['oauth_token'], token['oauth_token_secret'], verify)
     login = flickr.test.login
-    puts "You are now authenticated as #{login.username}"
+    puts "You are now authenticated as #{login.username} with token #{flickr.access_token} and secret #{flickr.access_secret}"
   rescue FlickRaw::FailedResponse => e
     puts "Authentication failed : #{e.msg}"
   end
@@ -86,6 +88,10 @@ If the user has already been authenticated, you can reuse the access token and a
   login = flickr.test.login
   puts "You are now authenticated as #{login.username}"
 
+If you need to have several users authenticated at the same time in your application (ex: a public web application) you need to create separate FlickRaw objects since it keeps the authentication data internally.
+
+  flickr = FlickRaw::Flickr.new
+
 == Upload
 
   require 'flickraw'
@@ -95,7 +101,7 @@ If the user has already been authenticated, you can reuse the access token and a
 
   PHOTO_PATH='photo.jpg'
 
-  # You need to be authentified to do that, see the previous examples.
+  # You need to be authenticated to do that, see the previous examples.
   flickr.upload_photo PHOTO_PATH, :title => "Title", :description => "This is the description"
 
 == Proxy
@@ -103,39 +109,75 @@ If the user has already been authenticated, you can reuse the access token and a
   require 'flickraw'
   FlickRaw.proxy = "http://user:pass@proxy.example.com:3129/"
 
+== Secure endpoints
+
+https endpoints are used by default. If you want to use unencrypted endpoints :
+
+  require 'flickraw'
+  FlickRaw.secure = false
+
+=== Server Certificate Verification
+
+Server certificate verification is enabled by default. If you don't want to check the server certificate :
+
+  require 'flickraw'
+  FlickRaw.check_certificate = false
+
+=== CA Certificate File Path
+
+OpenSSL::X509::DEFAULT_CERT_FILE is used as a CA certificate file. If you want to change the path :
+
+  require 'flickraw'
+  FlickRaw.ca_file = '/path/to/cacert.pem'
+
+You can also specify a path to a directory with a number of certifications:
+
+  FlickRaw.ca_path = '/path/to/certificates'
+
 == Flickr URL Helpers
 
 There are some helpers to build flickr urls :
 
-=== url, url_m, url_s, url_t, url_b, url_z, url_o
+=== url, url_m, url_s, url_t, url_b, url_z, url_q, url_n, url_c, url_o
+ 
+  # url_s : Square
+  # url_q : Large Square
+  # url_t : Thumbnail
+  # url_m : Small
+  # url_n : Small 320
+  # url   : Medium
+  # url_z : Medium 640
+  # url_c : Medium 800
+  # url_b : Large
+  # url_o : Original
 
   info = flickr.photos.getInfo(:photo_id => "3839885270")
-  FlickRaw.url_b(info) # => "http://farm3.static.flickr.com/2485/3839885270_6fb8b54e06_b.jpg"
+  FlickRaw.url_b(info) # => "https://farm3.static.flickr.com/2485/3839885270_6fb8b54e06_b.jpg"
 
 === url_profile
 
   info = flickr.photos.getInfo(:photo_id => "3839885270")
-  FlickRaw.url_profile(info) # => "http://www.flickr.com/people/41650587@N02/"
+  FlickRaw.url_profile(info) # => "https://www.flickr.com/people/41650587@N02/"
 
 === url_photopage
 
   info = flickr.photos.getInfo(:photo_id => "3839885270")
-  FlickRaw.url_photopage(info) # => "http://www.flickr.com/photos/41650587@N02/3839885270"
+  FlickRaw.url_photopage(info) # => "https://www.flickr.com/photos/41650587@N02/3839885270"
 
 === url_photoset, url_photosets
 
   info = flickr.photos.getInfo(:photo_id => "3839885270")
-  FlickRaw.url_photosets(info) # => "http://www.flickr.com/photos/41650587@N02/sets/"
+  FlickRaw.url_photosets(info) # => "https://www.flickr.com/photos/41650587@N02/sets/"
 
 === url_short, url_short_m, url_short_s, url_short_t
 
   info = flickr.photos.getInfo(:photo_id => "3839885270")
-  FlickRaw.url_short(info) # => "http://flic.kr/p/6Rjq7s"
+  FlickRaw.url_short(info) # => "https://flic.kr/p/6Rjq7s"
 
 === url_photostream
 
   info = flickr.photos.getInfo(:photo_id => "3839885270")
-  FlickRaw.url_photostream(info) # => "http://www.flickr.com/photos/41650587@N02/"
+  FlickRaw.url_photostream(info) # => "https://www.flickr.com/photos/41650587@N02/"
 
 
 See the _examples_ directory to find more examples.
@@ -152,10 +194,3 @@ instead of
 
 This way it it doesn't fetch available flickr methods each time it is loaded.
 The flickraw-cached gem is on rubygems.org and should be up-to-date with regard to flickr api most of the time.
-
-= Notes
-
-If you want to use the api authenticated with several user at the same time, you must pass the authentication token explicitely each time.
-This is because it is keeping the authentication token internally.
-As an alternative, you can create new Flickr objects besides Kernel.flickr which is created for you. Use Flickr.new to this effect.
-

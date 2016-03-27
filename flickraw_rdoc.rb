@@ -1,6 +1,6 @@
 require "rdoc"
 require "rdoc/parser/ruby"
-require "cgi"
+require "nokogiri"
 
 FLICKR_API_URL='http://www.flickr.com/services/api'
 
@@ -66,11 +66,7 @@ module RDoc
     end
 
     def flickr_method_comment(info)
-      description = CGI.unescapeHTML(info.method.description.to_s)
-#       description.gsub!( /<\/?(\w+)>/ ) {|b|
-#         return b if ['em', 'b', 'tt'].include? $1
-#         return ''
-#       }
+      description = Nokogiri::HTML(info.method.description.to_s).text
 
       if info.respond_to? :arguments
         args = info.arguments.select { |arg| arg.name != 'api_key' }
@@ -81,7 +77,7 @@ module RDoc
             arguments << "[#{arg.name} "
             arguments << "<em>(required)</em> " if arg.optional == '0'
             arguments << "] "
-            arguments << "#{CGI.unescapeHTML(arg.to_s)}\n"
+            arguments << "#{Nokogiri::HTML(arg.to_s).text}\n"
           }
         end
       end
@@ -90,13 +86,13 @@ module RDoc
         errors = "<b>Error codes</b>\n"
         info.errors.each {|e|
           errors << "* #{e.code}: <em>#{e.message}</em>\n\n"
-          errors << "  #{CGI.unescapeHTML e.to_s}\n"
+          errors << "  #{Nokogiri::HTML(e.to_s).text}\n"
         }
       end
 
       if info.method.respond_to? :response
         response = "<b>Returns</b>\n"
-        raw = CGI.unescapeHTML(info.method.response.to_s)
+        raw = Nokogiri::HTML(info.method.response.to_s).text
         response << raw.lines.collect { |line| line.insert(0, ' ') }.join
       else
         response = ''
